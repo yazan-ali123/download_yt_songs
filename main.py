@@ -34,6 +34,7 @@ async def download_and_send_audio(video_url: str):
                 'preferredquality': '192',
             }],
             'noplaylist': True,
+            'cookiefile': 'www.youtube.com_cookies.txt',
         }
 
         # Download and process the video
