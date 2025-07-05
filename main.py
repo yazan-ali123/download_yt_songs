@@ -9,6 +9,7 @@ import telegram
 # Replace these with your actual credentials
 BOT_TOKEN = '7688608495:AAHIY4nf30G5RO49NV-CwZJV6DcBZRratT4'
 YOUR_CHAT_ID = '6033677437'
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
 
 # --- Initialize FastAPI and the Telegram Bot ---
 app = FastAPI()
@@ -35,6 +36,7 @@ async def download_and_send_audio(video_url: str):
             }],
             'noplaylist': True,
             'cookiefile': 'www.youtube.com_cookies.txt',
+             'add_header': f'User-Agent: {USER_AGENT}'
         }
 
         # Download and process the video
