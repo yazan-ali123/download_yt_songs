@@ -18,4 +18,4 @@ COPY . .
 EXPOSE 8080
 
 # 7. Define the command to run your app (This replaces the Procfile)
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
