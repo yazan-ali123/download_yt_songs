@@ -1,89 +1,75 @@
 import os
-import logging
-import re
-import asyncio # Import the asyncio library
+import asyncio
+from fastapi import FastAPI, HTTPException, BackgroundTasks
+from pydantic import BaseModel
 import yt_dlp
-from telegram import Update
-from telegram.ext import ApplicationBuilder, MessageHandler, filters, ContextTypes
-
-# --- Basic Setup ---
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
-logger = logging.getLogger(__name__)
+import telegram
 
 # --- CONFIGURATION ---
-TELEGRAM_BOT_TOKEN = '7688608495:AAHIY4nf30G5RO49NV-CwZJV6DcBZRratT4'
-YOUTUBE_URL_REGEX = r'(https?://)?(www\.)?(youtube|youtu|youtube-nocookie)\.(com|be)/(watch\?v=|embed/|v/|.+\?v=)?([^&=%\?]{11})'
+# Replace these with your actual credentials
+BOT_TOKEN = '7688608495:AAHIY4nf30G5RO49NV-CwZJV6DcBZRratT4'
+YOUR_CHAT_ID = '6033677437'
 
+# --- Initialize FastAPI and the Telegram Bot ---
+app = FastAPI()
+bot = telegram.Bot(token=BOT_TOKEN)
 
-async def process_audio_task(url: str, update: Update, context: ContextTypes.DEFAULT_TYPE):
+# --- Define the data model for the incoming request ---
+class URLRequest(BaseModel):
+    url: str
+
+# --- The actual downloading and sending logic ---
+async def download_and_send_audio(video_url: str):
     """
-    The actual heavy-lifting function that runs in the background.
-    This downloads, converts, and sends the audio.
+    This function runs in the background to download, convert, and send the audio.
     """
     try:
-        # Let the user know the download is starting
-        processing_message = await update.message.reply_text("🎧 Starting download and conversion... this might take a moment.")
-        
+        # Configure yt-dlp to download audio-only, convert to mp3
         ydl_opts = {
             'format': 'bestaudio/best',
+            'outtmpl': '%(title)s.%(ext)s',
             'postprocessors': [{
                 'key': 'FFmpegExtractAudio',
                 'preferredcodec': 'mp3',
                 'preferredquality': '192',
             }],
-            'outtmpl': '%(title)s.%(ext)s',
             'noplaylist': True,
         }
 
+        # Download and process the video
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            filename = ydl.prepare_filename(info).rsplit('.', 1)[0] + '.mp3'
+            info = ydl.extract_info(video_url, download=True)
+            # The filename after conversion will be .mp3
+            file_path = ydl.prepare_filename(info).rsplit('.', 1)[0] + '.mp3'
+
+        # Send the audio file to your specified chat
+        await bot.send_audio(chat_id=YOUR_CHAT_ID, audio=open(file_path, 'rb'))
         
-        # Edit the message to let the user know the upload is starting
-        await context.bot.edit_message_text(chat_id=update.effective_chat.id, message_id=processing_message.message_id, text="⬆️ Uploading audio...")
-        
-        await update.message.reply_audio(audio=open(filename, 'rb'))
-        
-        # Clean up by deleting the message and the file
-        await context.bot.delete_message(chat_id=update.effective_chat.id, message_id=processing_message.message_id)
-        os.remove(filename)
+        # Clean up the downloaded file
+        os.remove(file_path)
 
     except Exception as e:
-        logger.error(f"Error processing {url}: {e}")
-        # If an error happens in the background, inform the user.
-        await update.message.reply_text("Sorry, I couldn't process this audio. Please check the link or try another.")
+        # If something goes wrong, send an error message
+        error_message = f"Failed to process video: {video_url}\nError: {str(e)}"
+        await bot.send_message(chat_id=YOUR_CHAT_ID, text=error_message)
 
 
-async def audio_downloader_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+# --- Define the API endpoint ---
+@app.post("/process-url/")
+async def process_url_endpoint(request: URLRequest, background_tasks: BackgroundTasks):
     """
-    This is the main handler. It responds instantly and schedules the background task.
+    This is the endpoint that Make.com will call.
+    It receives a URL, immediately returns a success message,
+    and starts the download in the background.
     """
-    message_text = update.message.text
-    match = re.search(YOUTUBE_URL_REGEX, message_text)
+    if "youtube.com" in request.url or "youtu.be" in request.url:
+        # Add the download task to run in the background
+        background_tasks.add_task(download_and_send_audio, request.url)
+        # Immediately return a response to Make.com
+        return {"status": "success", "message": "Audio processing started in the background."}
+    else:
+        raise HTTPException(status_code=400, detail="Invalid YouTube URL provided.")
 
-    if match:
-        url = match.group(0)
-        
-        # 1. ACKNOWLEDGE IMMEDIATELY - This is the key to avoiding timeouts.
-        await update.message.reply_text("✅ Link received! I'll get to work on your audio.")
-        
-        # 2. SCHEDULE THE TASK - Run the heavy work in the background.
-        asyncio.create_task(process_audio_task(url, update, context))
-
-
-def main():
-    """Starts the bot."""
-    application = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
-
-    # Filters for any message containing a YouTube link
-    url_filter = filters.Regex(YOUTUBE_URL_REGEX)
-    application.add_handler(MessageHandler(url_filter & ~filters.COMMAND, audio_downloader_handler))
-
-    print("Bot is running...")
-    application.run_polling()
-
-if __name__ == '__main__':
-    main()
+@app.get("/")
+def read_root():
+    return {"status": "ok", "message": "Bot is running."}
