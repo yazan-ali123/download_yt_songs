@@ -10,7 +10,7 @@ from telegram.request import HTTPXRequest
 # --- CONFIGURATION ---
 BOT_TOKEN = '7688608495:AAHIY4nf30G5RO49NV-CwZJV6DcBZRratT4'
 YOUR_CHAT_ID = '6033677437'
-USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 OPR/119.0.0.0"
 
 # --- APPLICATION SETUP ---
 work_queue = asyncio.Queue()
