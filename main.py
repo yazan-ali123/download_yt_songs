@@ -51,7 +51,7 @@ async def worker():
                 warning_message = f"Download complete, but the file is {file_size_mb:.2f} MB. This is too large to send (50 MB limit)."
                 await bot.send_message(chat_id=YOUR_CHAT_ID, text=warning_message)
             else:
-                await bot.send_audio(chat_id=YOUR_CHAT_ID, audio=open(file_path, 'rb'), supports_streaming=True)
+                await bot.send_audio(chat_id=YOUR_CHAT_ID, audio=open(file_path, 'rb'))
 
         except Exception as e:
             error_message = f"Failed to process: {video_url}\n\nError: {str(e)}"
