@@ -24,8 +24,6 @@ async def worker():
         
         file_path = ""
         try:
-            await bot.send_message(chat_id=YOUR_CHAT_ID, text=f"Processing next in queue: {video_url}")
-
             ydl_opts = {
                 'format': 'bestaudio/best',
                 'outtmpl': '%(title)s.%(ext)s',
@@ -55,7 +53,7 @@ async def worker():
 
         except Exception as e:
             error_message = f"Failed to process: {video_url}\n\nError: {str(e)}"
-            await bot.send_message(chat_id=YOUR_CHAT_ID, text=error_message)
+            print(error_message)
         
         finally:
             if file_path and os.path.exists(file_path):
