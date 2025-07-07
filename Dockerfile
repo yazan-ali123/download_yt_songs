@@ -15,7 +15,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # 6. Expose the port the app will run on
-EXPOSE 8080
+EXPOSE 8000
 
 # 7. Define the command to run your app (This replaces the Procfile)
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
