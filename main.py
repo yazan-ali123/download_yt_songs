@@ -36,7 +36,9 @@ async def worker():
                 }],
                 'noplaylist': True,
                 'cookiefile': 'cookies.txt',
-                'add_header': f'User-Agent: {USER_AGENT}'
+                'add_header': f'User-Agent: {USER_AGENT}',
+                'sleep_interval': 5,          
+                'max_sleep_interval': 15, 
             }
             
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
